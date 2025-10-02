@@ -7,11 +7,25 @@ export default function App() {
   const [tasks, setTasks] = useState([]);
   const [tasksDone, setTasksDone] = useState([]);
   const [tasksTodo, setTasksTodo] = useState([]);
+  const [tasksOverHeight, setTasksOverHeight] = useState(false);
   const taskInput = useRef();
+  const tasksDiv = useRef(null);
 
   useEffect(() => {
     const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
     setTasks(savedTasks);
+    
+    const observer = new ResizeObserver(() => {
+      if (tasksDiv.current.offsetHeight === 600) {
+        setTasksOverHeight(true);
+      } else {
+        setTasksOverHeight(false);
+      }
+    });
+
+    observer.observe(tasksDiv.current);
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -27,7 +41,8 @@ export default function App() {
     toast.error(msg, { id: "global-toast" });
   };
 
-  const checkMatch = () => {
+  const validate = (e) => {
+    e.preventDefault();
     const taskName = taskInput.current.value.trim();
     if (!taskName) {
       showError("Please enter content to add a task");
@@ -63,14 +78,14 @@ export default function App() {
         }}
       />
       <div className="tasks-container container bg-[#1D1825] w-[600px] rounded-[20px] px-[65px] py-[50px]">
-        <div className="top-actions flex gap-[15px] w-full">
+        <form onSubmit={validate} className="top-actions flex gap-[15px] w-full">
           <input ref={taskInput} className="w-full border border-[#9E78CF] rounded-[10px] py-2.5 px-4 outline-0" type="search" placeholder="Add a new task" />
-          <button onClick={checkMatch} className="bg-[#9E78CF] rounded-[10px] p-2 hover:bg-[#8a5fc2] transition-colors duration-200 cursor-pointer">
+          <button type="submit" className="bg-[#9E78CF] rounded-[10px] p-2 hover:bg-[#8a5fc2] transition-colors duration-200 cursor-pointer">
             <Plus size={30} />
           </button>
-        </div>
+        </form>
 
-        <div className="tasks mt-[60px] overflow-x-hidden overflow-y-scroll max-h-[600px]">
+        <div ref={tasksDiv} className={`tasks mt-[60px] ${tasksOverHeight ? 'overflow-x-hidden overflow-y-scroll' : ''} max-h-[600px]`}>
           {tasksTodo.length > 0 && (
             <div className={`tasks-todo ${tasksDone.length > 0 && "mb-[60px]"}`}>
               <h1 className="leading-[100%] tracking-normal mb-4">
